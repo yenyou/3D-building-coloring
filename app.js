@@ -3,44 +3,17 @@ require( [
     'esri/Map',
     'esri/layers/ElevationLayer',
     'esri/views/SceneView',
-    'esri/layers/SceneLayer',
-    'esri/layers/GroupLayer',
-    'esri/rest/support/Query',
-    'esri/views/layers/support/FeatureFilter',
-    'esri/Graphic',
-    'esri/layers/GraphicsLayer',
     'esri/layers/FeatureLayer',
-    'esri/layers/MapImageLayer',
-    'esri/geometry/Multipoint',
     "esri/core/watchUtils",
 
 ], function ( Map,
     ElevationLayer,
     SceneView,
-    SceneLayer,
-    GroupLayer,
-    Query,
-    FeatureFilter,
-    Graphic,
-    GraphicsLayer,
     FeatureLayer,
-    MapImageLayer,
-    Multipoint,
     watchUtils ) {
 
     let _map;
     let _view;
-    let _vm;
-    let _sceneLayer;
-    let _sceneLayerView;
-    let _graphicsLayer;
-    let _featureLayer;
-    let _buildingLayer;
-    let _buildingLayerView;
-    let _pointLayer;
-    let _classOneList = [];
-    let _classTwoList = [];
-    let _center;
 
     setMap();
     setView();
@@ -107,73 +80,45 @@ require( [
                     material: {
                         color: color
                     },
-                    edges: {
-                        type: "solid",
-                        color: "#999",
-                        size: 0.5
-                    }
                 }
             ]
         };
     }
 
-
-    const buildingsLayer = new FeatureLayer( {
-        url: "https://richimap2.richitech.com.tw/arcgis/rest/services/test/NCDR_SDE_Building_NTP/MapServer/0",
-        renderer: renderer,
-        popupEnabled: true,
-        popupTemplate: {
-            outFields: ["BUILD_ID", "z", "classify"],
-            content: [
-                {
-                    type: "fields",
-                    fieldInfos: [
-                        {
-                            fieldName: "z",
-                            label: "Z"
-                        },
-                        {
-                            fieldName: "BUILD_ID",
-                            label: "BUILD ID",
-                        }, {
-                            fieldName: "classify",
-                            label: "Classify"
-                        },
-                    ]
-                }
-            ]
-        }
-
+    watchUtils.whenFalse( _view, 'stationary', () => {
+        console.log( 'move' );
+        _map.removeAll();
     } );
 
-    _map.add( buildingsLayer );
-
-
-
-    function getCenter() {
-        return [_view.center.longitude, _view.center.latitude];
-    }
-
-    _view.whenLayerView( buildingsLayer ).then( function ( layerView ) {
-        _buildingLayerView = layerView;
-        console.log( 'done' );
-
-        watchUtils.whenTrue( _view, 'stationary', () => {
-            console.log( 'View stop!!!' );
-            _center = getCenter();
-
-            _buildingLayerView.filter = new FeatureFilter( {
-                geometry: {
-                    type: "point",
-                    x: _center[0],
-                    y: _center[1],
-                },
-                spatialRelationship: "intersects",
-                distance: 1000,
-                units: "meters"
-            } );
+    watchUtils.whenTrue( _view, 'stationary', () => {
+        console.log( 'stop' );
+        const buildingLayer = new FeatureLayer( {
+            url: "https://richimap2.richitech.com.tw/arcgis/rest/services/test/NCDR_SDE_Building_NTP/MapServer/0",
+            renderer: renderer,
+            popupEnabled: true,
+            popupTemplate: {
+                outFields: ["BUILD_ID", "z", "classify"],
+                content: [
+                    {
+                        type: "fields",
+                        fieldInfos: [
+                            {
+                                fieldName: "z",
+                                label: "Z"
+                            },
+                            {
+                                fieldName: "BUILD_ID",
+                                label: "BUILD ID",
+                            }, {
+                                fieldName: "classify",
+                                label: "Classify"
+                            },
+                        ]
+                    }
+                ]
+            }
         } );
-
-
+        _map.add( buildingLayer );
     } );
+
 } );
